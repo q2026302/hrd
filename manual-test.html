@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>数字华容道求解器 · 完整测试套件</title>
+    <style>
+        :root {
+            --bg: #0b1220;
+            --panel: #111a2e;
+            --text: #e6eefc;
+            --muted: #a9b6d3;
+            --border: rgba(255, 255, 255, 0.08);
+            --primary: #3b82f6;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #06b6d4;
+            --secondary: #64748b;
+        }
+
+        body {
+            margin: 0;
+            font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
+            background: radial-gradient(1200px 800px at 20% 10%, rgba(59, 130, 246, 0.18), transparent 40%),
+                        radial-gradient(1200px 800px at 90% 20%, rgba(34, 197, 94, 0.14), transparent 40%),
+                        var(--bg);
+            color: var(--text);
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 18px;
+        }
+
+        h1 {
+            margin: 8px 0 14px;
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+        }
+
+        .status-panel {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 12px 14px;
+            background: rgba(17, 26, 46, 0.85);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            backdrop-filter: blur(6px);
+        }
+
+        .status-item {
+            color: var(--muted);
+            font-size: 13px;
+        }
+        .status-label {
+            color: var(--text);
+            margin-right: 6px;
+            opacity: 0.9;
+        }
+
+        .tab-container {
+            margin-top: 14px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            background: rgba(17, 26, 46, 0.65);
+        }
+
+        .tab-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 10px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(17, 26, 46, 0.85);
+        }
+
+        .tab-button {
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text);
+            padding: 8px 10px;
+            font-size: 13px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.15s ease, border-color 0.15s ease;
+        }
+        .tab-button:hover { border-color: rgba(255, 255, 255, 0.18); }
+        .tab-button.active { background: rgba(59, 130, 246, 0.18); border-color: rgba(59, 130, 246, 0.45); }
+
+        .tab-content {
+            display: none;
+            padding: 14px;
+        }
+        .tab-content.active { display: block; }
+
+        .card {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px;
+            background: rgba(17, 26, 46, 0.75);
+            margin-bottom: 12px;
+        }
+
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        button {
+            border: 1px solid var(--border);
+            padding: 8px 10px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text);
+            cursor: pointer;
+            font-size: 13px;
+            transition: transform 0.03s ease, background 0.15s ease, border-color 0.15s ease;
+        }
+        button:hover { background: rgba(255, 255, 255, 0.09); border-color: rgba(255, 255, 255, 0.18); }
+        button:active { transform: translateY(1px); }
+        button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+        .success { border-color: rgba(34, 197, 94, 0.35); }
+        .warning { border-color: rgba(245, 158, 11, 0.35); }
+        .info { border-color: rgba(6, 182, 212, 0.35); }
+        .secondary { border-color: rgba(100, 116, 139, 0.35); }
+
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        @media (max-width: 860px) {
+            .row { grid-template-columns: 1fr; }
+        }
+
+        .field {
+            display: grid;
+            grid-template-columns: 140px 1fr;
+            gap: 10px;
+            align-items: center;
+            margin: 8px 0;
+            color: var(--muted);
+            font-size: 13px;
+        }
+        input, textarea, select {
+            width: 100%;
+            box-sizing: border-box;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text);
+            padding: 8px 10px;
+            outline: none;
+        }
+        textarea { min-height: 110px; resize: vertical; }
+
+        .progress-bar {
+            margin-top: 10px;
+            height: 10px;
+            border-radius: 99px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+        .progress-bar > div {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, rgba(59, 130, 246, 0.95), rgba(34, 197, 94, 0.95));
+            transition: width 0.1s linear;
+        }
+
+        .results {
+            margin-top: 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: rgba(17, 26, 46, 0.55);
+            overflow: hidden;
+        }
+        .results-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(17, 26, 46, 0.75);
+            color: var(--muted);
+            font-size: 13px;
+        }
+        .results-body {
+            padding: 10px 12px;
+            max-height: 430px;
+            overflow: auto;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: 12.5px;
+            line-height: 1.45;
+        }
+
+        .log-line { margin: 2px 0; white-space: pre-wrap; word-break: break-word; }
+        .log-info { color: #c7d2fe; }
+        .log-success { color: #86efac; }
+        .log-warning { color: #fde68a; }
+        .log-error { color: #fca5a5; }
+        .badge {
+            font-size: 12px;
+            padding: 3px 8px;
+            border-radius: 99px;
+            border: 1px solid var(--border);
+            color: var(--muted);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>数字华容道求解器 · 完整测试套件</h1>
+
+        <div class="status-panel" id="statusPanel">
+            <span class="status-item"><span class="status-label">状态:</span> <span id="statusText">初始化中</span></span>
+            <span class="status-item"><span class="status-label">运行时间:</span> <span id="runTime">0s</span></span>
+            <span class="status-item"><span class="status-label">当前测试:</span> <span id="currentTest">-</span></span>
+            <span class="status-item"><span class="status-label">求解模式:</span> <span id="solverMode">-</span></span>
+        </div>
+
+        <div class="tab-container">
+            <div class="tab-buttons">
+                <button class="tab-button active" onclick="switchTab('basic')">基础测试</button>
+                <button class="tab-button" onclick="switchTab('advanced')">高级测试</button>
+                <button class="tab-button" onclick="switchTab('performance')">⚡ 性能测试</button>
+                <button class="tab-button" onclick="switchTab('custom')">✏️ 自定义测试</button>
+                <button class="tab-button" onclick="switchTab('verification')">✅ 验证测试</button>
+            </div>
+
+            <div id="tab-basic" class="tab-content active">
+                <div class="card">
+                    <div class="row">
+                        <div>
+                            <h3 style="margin:0 0 8px;">3x3 测试</h3>
+                            <div class="btn-group">
+                                <button onclick="runTest('3x3目标', [1,2,3,4,5,6,7,8,9], 3)">目标状态</button>
+                                <button onclick="runTest('3x3一步', [1,2,3,4,5,6,7,9,8], 3)">一步可解</button>
+                                <button onclick="runTest('3x3困难', [8,6,7,2,5,4,3,9,1], 3)">困难开局</button>
+                                <button class="secondary" onclick="testSolvability(3)">可解性判断</button>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 style="margin:0 0 8px;">4x4 测试</h3>
+                            <div class="btn-group">
+                                <button onclick="runTest('4x4目标', [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16], 4)">目标状态</button>
+                                <button onclick="runTest('4x4一步', [1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,15], 4)">一步可解</button>
+                                <button onclick="runTest('4x4简单', [1,2,3,4,5,6,7,8,9,10,11,12,13,16,14,15], 4)">简单乱序</button>
+                                <button class="secondary" onclick="testSolvability(4)">可解性判断</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top:12px;">
+                        <h3 style="margin:0 0 8px;">5x5 测试</h3>
+                        <div class="btn-group">
+                            <button onclick="runTest('5x5目标', [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25], 5)">目标状态</button>
+                            <button onclick="runTest('5x5一步', [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,25,24], 5)">一步可解</button>
+                            <button onclick="runTest('5x5简单', [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,25,23,24], 5)">简单乱序</button>
+                            <button class="secondary" onclick="testSolvability(5)">可解性判断</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-advanced" class="tab-content">
+                <div class="card">
+                    <h2 style="margin:0 0 8px;">高级测试套件</h2>
+                    <div class="field">
+                        <div>timeLimitMs</div>
+                        <input id="optTimeLimitMs" type="number" min="10" step="50" value="3000" />
+                    </div>
+                    <div class="field">
+                        <div>maxMoves</div>
+                        <input id="optMaxMoves" type="number" min="1" step="1" value="100" />
+                    </div>
+
+                    <div class="btn-group">
+                        <button class="success" onclick="runAllTests()">▶️ 运行所有测试</button>
+                        <button class="secondary" onclick="runTestsBySize(3)">3x3 测试集</button>
+                        <button class="secondary" onclick="runTestsBySize(4)">4x4 测试集</button>
+                        <button class="secondary" onclick="runTestsBySize(5)">5x5 测试集</button>
+                        <button class="warning" onclick="clearResults()">清空结果</button>
+                        <button class="info" onclick="stopCurrentTest()">⏹️ 停止当前测试</button>
+                    </div>
+
+                    <div class="progress-bar" id="progressBar">
+                        <div id="progressFill"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-performance" class="tab-content">
+                <div class="card">
+                    <h2 style="margin:0 0 8px;">性能测试</h2>
+                    <div class="field">
+                        <div>测试次数</div>
+                        <input id="perfRuns" type="number" min="1" step="1" value="10" />
+                    </div>
+                    <div class="field">
+                        <div>尺寸</div>
+                        <select id="perfSize">
+                            <option value="3">3x3</option>
+                            <option value="4" selected>4x4</option>
+                            <option value="5">5x5</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <div>棋盘</div>
+                        <textarea id="perfBoard" spellcheck="false">1,2,3,4,5,6,7,8,9,10,11,12,13,16,14,15</textarea>
+                    </div>
+                    <div class="btn-group">
+                        <button class="success" onclick="runPerformanceTest()">▶️ 开始性能测试</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-custom" class="tab-content">
+                <div class="card">
+                    <h2 style="margin:0 0 8px;">自定义测试</h2>
+                    <div class="field">
+                        <div>尺寸</div>
+                        <select id="customSize">
+                            <option value="3">3x3</option>
+                            <option value="4" selected>4x4</option>
+                            <option value="5">5x5</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <div>棋盘(逗号分隔)</div>
+                        <textarea id="customBoard" spellcheck="false">1,2,3,4,5,6,7,8,9,10,11,12,13,16,14,15</textarea>
+                    </div>
+                    <div class="btn-group">
+                        <button class="success" onclick="runCustomTest()">▶️ 求解</button>
+                        <button class="secondary" onclick="checkCustomSolvable()">仅判断可解</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-verification" class="tab-content">
+                <div class="card">
+                    <h2 style="margin:0 0 8px;">验证测试</h2>
+                    <div class="field">
+                        <div>尺寸</div>
+                        <select id="verifySize">
+                            <option value="3">3x3</option>
+                            <option value="4" selected>4x4</option>
+                            <option value="5">5x5</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <div>起始棋盘</div>
+                        <textarea id="verifyBoard" spellcheck="false">1,2,3,4,5,6,7,8,9,10,11,12,13,16,14,15</textarea>
+                    </div>
+                    <div class="field">
+                        <div>moves(JSON数组)</div>
+                        <textarea id="verifyMoves" spellcheck="false">["left","up"]</textarea>
+                    </div>
+                    <div class="btn-group">
+                        <button class="success" onclick="runVerifyTest()">▶️ 验证</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="results">
+            <div class="results-header">
+                <div>输出</div>
+                <div class="badge" id="resultBadge">-</div>
+            </div>
+            <div class="results-body" id="results"></div>
+        </div>
+    </div>
+
+    <!-- Ensure solver.js is loaded as a plain script (not module) -->
+    <script src="./solver.js"></script>
+
+    <script>
+        // ---- Solver selection (Worker first, fallback to main thread) ----
+        let ActiveSolver = null;
+        let solverProxy = null;
+
+        async function initSolver() {
+            if (typeof PuzzleSolver === "undefined" || !PuzzleSolver) {
+                throw new Error("未找到求解器！请确保 solver.js 已正确加载且暴露 window.PuzzleSolver");
+            }
+
+            const modeEl = document.getElementById("solverMode");
+
+            try {
+                if (typeof PuzzleSolver.createWorkerProxy === "function") {
+                    solverProxy = await PuzzleSolver.createWorkerProxy("./solver.worker.js");
+                    ActiveSolver = solverProxy;
+                    if (modeEl) modeEl.textContent = "WebWorker";
+                    addResult("✅ 已启用 Web Worker 求解（更流畅）", "success");
+                    return;
+                }
+            } catch (e) {
+                addResult("⚠️ Worker 启用失败，回退主线程: " + (e && e.message ? e.message : String(e)), "warning");
+            }
+
+            ActiveSolver = PuzzleSolver;
+            if (modeEl) modeEl.textContent = "MainThread";
+            addResult("ℹ️ 使用主线程求解器（可能卡顿）", "info");
+        }
+
+        // ---- UI control ----
+        let currentTestActive = false;
+        let stopRequested = false;
+        let statusTimer = null;
+        let testStartTime = null;
+
+        function switchTab(tabId) {
+            document.querySelectorAll(".tab-button").forEach(btn => btn.classList.remove("active"));
+            document.querySelectorAll(".tab-content").forEach(content => content.classList.remove("active"));
+
+            const btn = Array.from(document.querySelectorAll(".tab-button")).find(b => (b.getAttribute("onclick") || "").includes("'" + tabId + "'"));
+            if (btn) btn.classList.add("active");
+
+            const content = document.getElementById("tab-" + tabId);
+            if (content) content.classList.add("active");
+        }
+
+        function updateStatus(status, currentTestName) {
+            const statusText = document.getElementById("statusText");
+            if (statusText) statusText.textContent = status || "就绪";
+            const cur = document.getElementById("currentTest");
+            if (cur) cur.textContent = currentTestName || (status === "运行中" ? (cur.textContent || "-") : "-");
+        }
+
+        function startRunTimer() {
+            testStartTime = Date.now();
+            stopRunTimer();
+            statusTimer = setInterval(() => {
+                const runTime = document.getElementById("runTime");
+                if (!runTime || !testStartTime) return;
+                const s = Math.floor((Date.now() - testStartTime) / 1000);
+                runTime.textContent = s + "s";
+            }, 200);
+        }
+
+        function stopRunTimer() {
+            if (statusTimer) clearInterval(statusTimer);
+            statusTimer = null;
+        }
+
+        function setProgress(pct) {
+            const fill = document.getElementById("progressFill");
+            if (!fill) return;
+            const v = Math.max(0, Math.min(100, pct));
+            fill.style.width = v.toFixed(1) + "%";
+        }
+
+        function clearResults() {
+            const el = document.getElementById("results");
+            if (el) el.innerHTML = "";
+            setProgress(0);
+            const badge = document.getElementById("resultBadge");
+            if (badge) badge.textContent = "-";
+        }
+
+        function addResult(text, type) {
+            const el = document.getElementById("results");
+            if (!el) return;
+
+            const line = document.createElement("div");
+            line.className = "log-line " + (type ? ("log-" + type) : "log-info");
+            line.textContent = text;
+            el.appendChild(line);
+
+            el.scrollTop = el.scrollHeight;
+        }
+
+        function stopCurrentTest() {
+            if (!currentTestActive) {
+                addResult("ℹ️ 当前没有正在运行的测试", "info");
+                return;
+            }
+            stopRequested = true;
+            addResult("⏹️ 已请求停止：将在当前用例结束后停止", "warning");
+        }
+
+        function readSolveOptionsFromUI() {
+            const timeLimitMs = Number(document.getElementById("optTimeLimitMs")?.value || 3000);
+            const maxMoves = Number(document.getElementById("optMaxMoves")?.value || 100);
+            return {
+                timeLimitMs: Number.isFinite(timeLimitMs) ? timeLimitMs : 3000,
+                maxMoves: Number.isFinite(maxMoves) ? maxMoves : 100,
+                onProgress: null // Worker 模式无法传函数；如需进度事件流需改 worker 协议
+            };
+        }
+
+        function formatBoard(board, size) {
+            const rows = [];
+            for (let r = 0; r < size; r++) {
+                const row = board.slice(r * size, (r + 1) * size)
+                    .map(v => (v === size * size ? "□" : String(v).padStart(2, " ")))
+                    .join(" ");
+                rows.push(row);
+            }
+            return rows.join("\n");
+        }
+
+        function parseBoardFromText(text, size) {
+            const nums = String(text)
+                .split(/[\s,]+/)
+                .filter(Boolean)
+                .map(x => Number(x));
+
+            if (nums.length !== size * size) {
+                throw new Error(`棋盘数量不对：需要 ${size * size} 个数字，实际 ${nums.length} 个`);
+            }
+            return nums;
+        }
+
+        // Allow UI updates between heavy cases
+        async function yieldToUI() {
+            await new Promise(resolve => setTimeout(resolve, 0));
+        }
+
+        // ---- Single test ----
+        async function runTest(name, board, size) {
+            if (currentTestActive) {
+                addResult("❌ 已有测试在运行，请等待或停止", "error");
+                return;
+            }
+            currentTestActive = true;
+            stopRequested = false;
+            updateStatus("运行中", name);
+            startRunTimer();
+            setProgress(0);
+
+            try {
+                addResult("▶️ " + name + ` (${size}x${size})`, "info");
+                addResult("初始棋盘:\n" + formatBoard(board, size), "info");
+
+                const opts = readSolveOptionsFromUI();
+                const t0 = performance.now();
+                const result = await ActiveSolver.solve(board, size, opts);
+                const t1 = performance.now();
+
+                if (!result || result.solvable === false) {
+                    addResult("结果: 不可解", "warning");
+                } else if (result.moves === null) {
+                    addResult("结果: 可解，但在限制内未找到解（超时或 maxMoves 限制）", "warning");
+                    addResult("stats: " + JSON.stringify(result.stats || {}, null, 0), "warning");
+                } else {
+                    addResult(`✅ 找到解: ${result.moves.length} 步，用时 ${(t1 - t0).toFixed(1)}ms`, "success");
+                    addResult("moves: " + JSON.stringify(result.moves), "info");
+                    if (Array.isArray(result.details) && result.details.length) {
+                        const preview = result.details.slice(0, 12).map(d => `${d.number}${d.directionChar || ""}`).join(" ");
+                        addResult("details(前12步): " + preview + (result.details.length > 12 ? " ..." : ""), "info");
+                    }
+                    const ok = await ActiveSolver.verifySolution(board, result.moves, size);
+                    addResult("验证: " + (ok ? "通过" : "失败"), ok ? "success" : "error");
+                }
+
+                const badge = document.getElementById("resultBadge");
+                if (badge) badge.textContent = name;
+
+            } catch (e) {
+                addResult("❌ 测试出错: " + (e && e.message ? e.message : String(e)), "error");
+                console.error(e);
+            } finally {
+                currentTestActive = false;
+                updateStatus("就绪");
+                stopRunTimer();
+                setProgress(100);
+            }
+        }
+
+        // ---- Solvability tests ----
+        async function testSolvability(size) {
+            if (currentTestActive) {
+                addResult("❌ 已有测试在运行，请等待或停止", "error");
+                return;
+            }
+
+            currentTestActive = true;
+            stopRequested = false;
+            updateStatus("运行中", `可解性 ${size}x${size}`);
+            startRunTimer();
+            clearResults();
+
+            try {
+                addResult(`测试 ${size}x${size} 可解性判断...`, "info");
+
+                const testCases = {
+                    3: [
+                        { board: [1,2,3,4,5,6,7,8,9], expected: true, name: "目标状态" },
+                        { board: [1,2,3,4,5,6,8,7,9], expected: false, name: "交换7和8" },
+                        { board: [8,6,7,2,5,4,3,9,1], expected: true, name: "困难开局" }
+                    ],
+                    4: [
+                        { board: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16], expected: true, name: "目标状态" },
+                        { board: [1,2,3,4,5,6,7,8,9,10,11,12,13,15,14,16], expected: false, name: "交换14和15" },
+                        { board: [1,2,3,4,5,6,7,8,9,10,11,12,13,16,14,15], expected: true, name: "简单可解" }
+                    ],
+                    5: [
+                        { board: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25], expected: true, name: "目标状态" },
+                        { board: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,25,24], expected: true, name: "一步可解" },
+                        { board: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,25,24,23], expected: false, name: "末尾三数乱序" }
+                    ]
+                };
+
+                const cases = testCases[size] || [];
+                let passed = 0;
+
+                for (let i = 0; i < cases.length; i++) {
+                    if (stopRequested) break;
+                    const tc = cases[i];
+
+                    const actual = await ActiveSolver.isSolvable(tc.board, size);
+                    const ok = actual === tc.expected;
+                    if (ok) passed++;
+
+                    addResult(`${ok ? "✅" : "❌"} ${tc.name}: 期望 ${tc.expected}，实际 ${actual}`, ok ? "success" : "error");
+                    setProgress(((i + 1) / cases.length) * 100);
+                    await yieldToUI();
+                }
+
+                addResult(`测试完成: 通过 ${passed}/${cases.length}`, passed === cases.length ? "success" : "warning");
+
+            } catch (e) {
+                addResult("❌ 测试出错: " + (e && e.message ? e.message : String(e)), "error");
+                console.error(e);
+            } finally {
+                currentTestActive = false;
+                updateStatus("就绪");
+                stopRunTimer();
+            }
+        }
+
+        // ---- Test suite generation ----
+        function generateTestCases() {
+            // 你可以根据需要扩展更多用例
+            return [
+                { name: "3x3 目标", board: [1,2,3,4,5,6,7,8,9], size: 3, solvable: true },
+                { name: "3x3 一步", board: [1,2,3,4,5,6,7,9,8], size: 3, solvable: true },
+                { name: "3x3 不可解(7/8互换)", board: [1,2,3,4,5,6,8,7,9], size: 3, solvable: false },
+
+                { name: "4x4 目标", board: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16], size: 4, solvable: true },
+                { name: "4x4 简单可解", board: [1,2,3,4,5,6,7,8,9,10,11,12,13,16,14,15], size: 4, solvable: true },
+                { name: "4x4 不可解(14/15互换)", board: [1,2,3,4,5,6,7,8,9,10,11,12,13,15,14,16], size: 4, solvable: false },
+
+                { name: "5x5 目标", board: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25], size: 5, solvable: true },
+                { name: "5x5 一步", board: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,25,24], size: 5, solvable: true }
+            ];
+        }
+
+        async function runAllTests() {
+            if (currentTestActive) {
+                addResult("❌ 已有测试在运行，请等待或停止", "error");
+                return;
+            }
+
+            currentTestActive = true;
+            stopRequested = false;
+            updateStatus("运行中", "全部测试");
+            startRunTimer();
+            clearResults();
+
+            const cases = generateTestCases();
+            let passed = 0;
+            let failed = 0;
+
+            try {
+                addResult(`开始运行全部测试：共 ${cases.length} 个用例`, "info");
+                const tAll0 = performance.now();
+
+                for (let i = 0; i < cases.length; i++) {
+                    if (stopRequested) break;
+
+                    const tc = cases[i];
+                    updateStatus("运行中", tc.name);
+                    setProgress((i / cases.length) * 100);
+
+                    try {
+                        const opts = readSolveOptionsFromUI();
+
+                        const t0 = performance.now();
+                        const result = await ActiveSolver.solve(tc.board, tc.size, opts);
+                        const t1 = performance.now();
+
+                        if (tc.solvable === false) {
+                            const ok = result && result.solvable === false;
+                            ok ? passed++ : failed++;
+                            addResult(`${ok ? "✅" : "❌"} ${tc.name} (不可解期望) ${(t1 - t0).toFixed(1)}ms`, ok ? "success" : "error");
+                        } else {
+                            const ok = result && result.solvable === true && Array.isArray(result.moves);
+                            if (ok) {
+                                const verifyOk = await ActiveSolver.verifySolution(tc.board, result.moves, tc.size);
+                                if (verifyOk) {
+                                    passed++;
+                                    addResult(`✅ ${tc.name} ${result.moves.length} 步 ${(t1 - t0).toFixed(1)}ms`, "success");
+                                } else {
+                                    failed++;
+                                    addResult(`❌ ${tc.name} 解验证失败`, "error");
+                                }
+                            } else {
+                                failed++;
+                                const why = result && result.moves === null ? "（限制内未找到解）" : "";
+                                addResult(`❌ ${tc.name} 求解失败 ${why}`, "error");
+                            }
+                        }
+                    } catch (e) {
+                        failed++;
+                        addResult(`❌ ${tc.name} 出错: ${e && e.message ? e.message : String(e)}`, "error");
+                        console.error(e);
+                    }
+
+                    // Let browser paint progress + allow user to click stop
+                    await yieldToUI();
+                }
+
+                const tAll1 = performance.now();
+                setProgress(100);
+
+                addResult("", "info");
+                addResult(`测试完成! 总耗时: ${((tAll1 - tAll0) / 1000).toFixed(2)}秒`, "info");
+                addResult(`通过: ${passed}/${passed + failed}`, passed === (passed + failed) ? "success" : "warning");
+
+            } finally {
+                currentTestActive = false;
+                updateStatus("就绪");
+                stopRunTimer();
+            }
+        }
+
+        async function runTestsBySize(size) {
+            if (currentTestActive) {
+                addResult("❌ 已有测试在运行，请等待或停止", "error");
+                return;
+            }
+
+            currentTestActive = true;
+            stopRequested = false;
+            updateStatus("运行中", `${size}x${size}测试集`);
+            startRunTimer();
+            clearResults();
+
+            const all = generateTestCases();
+            const cases = all.filter(t => t.size === size);
+
+            let passed = 0;
+            let failed = 0;
+
+            try {
+                addResult(`运行 ${size}x${size} 测试集：共 ${cases.length} 个用例`, "info");
+
+                for (let i = 0; i < cases.length; i++) {
+                    if (stopRequested) break;
+
+                    const tc = cases[i];
+                    updateStatus("运行中", tc.name);
+                    setProgress(((i + 1) / cases.length) * 100);
+
+                    try {
+                        const opts = readSolveOptionsFromUI();
+                        const result = await ActiveSolver.solve(tc.board, tc.size, opts);
+
+                        if (tc.solvable === false) {
+                            const ok = result && result.solvable === false;
+                            ok ? passed++ : failed++;
+                            addResult(`${ok ? "✅" : "❌"} ${tc.name} (不可解期望)`, ok ? "success" : "error");
+                        } else {
+                            const ok = result && result.solvable === true && Array.isArray(result.moves);
+                            if (ok) {
+                                const verifyOk = await ActiveSolver.verifySolution(tc.board, result.moves, tc.size);
+                                if (verifyOk) {
+                                    passed++;
+                                    addResult(`✅ ${tc.name}: ${result.moves.length}步`, "success");
+                                } else {
+                                    failed++;
+                                    addResult(`❌ ${tc.name}: 解验证失败`, "error");
+                                }
+                            } else {
+                                failed++;
+                                addResult(`❌ ${tc.name}: 求解失败（限制内未找到解/超时）`, "error");
+                            }
+                        }
+                    } catch (e) {
+                        failed++;
+                        addResult(`❌ ${tc.name} 出错: ${e && e.message ? e.message : String(e)}`, "error");
+                        console.error(e);
+                    }
+
+                    await yieldToUI();
+                }
+
+                addResult("", "info");
+                addResult(`测试完成: 通过 ${passed}/${passed + failed}`, passed === (passed + failed) ? "success" : "warning");
+
+            } finally {
+                currentTestActive = false;
+                updateStatus("就绪");
+                stopRunTimer();
+            }
+        }
+
+        // ---- Performance test ----
+        async function runPerformanceTest() {
+            if (currentTestActive) {
+                addResult("❌ 已有测试在运行，请等待或停止", "error");
+                return;
+            }
+
+            currentTestActive = true;
+            stopRequested = false;
+            updateStatus("运行中", "性能测试");
+            startRunTimer();
+            clearResults();
+
+            try {
+                const runs = Number(document.getElementById("perfRuns")?.value || 10);
+                const size = Number(document.getElementById("perfSize")?.value || 4);
+                const boardText = document.getElementById("perfBoard")?.value || "";
+                const board = parseBoardFromText(boardText, size);
+
+                addResult(`性能测试：${runs} 次，尺寸 ${size}x${size}`, "info");
+                const opts = readSolveOptionsFromUI();
+
+                const times = [];
+                for (let i = 0; i < runs; i++) {
+                    if (stopRequested) break;
+
+                    const t0 = performance.now();
+                    const r = await ActiveSolver.solve(board, size, opts);
+                    const t1 = performance.now();
+
+                    times.push(t1 - t0);
+
+                    const tag = (r && r.moves && Array.isArray(r.moves)) ? `步数=${r.moves.length}` : "未找到解(限制内)";
+                    addResult(`第 ${i + 1}/${runs} 次: ${(t1 - t0).toFixed(1)}ms ${tag}`, "info");
+                    setProgress(((i + 1) / runs) * 100);
+                    await yieldToUI();
+                }
+
+                if (times.length) {
+                    const sum = times.reduce((a, b) => a + b, 0);
+                    const avg = sum / times.length;
+                    const min = Math.min(...times);
+                    const max = Math.max(...times);
+                    addResult("", "info");
+                    addResult(`统计：avg=${avg.toFixed(1)}ms min=${min.toFixed(1)}ms max=${max.toFixed(1)}ms`, "success");
+                }
+
+            } catch (e) {
+                addResult("❌ 性能测试出错: " + (e && e.message ? e.message : String(e)), "error");
+                console.error(e);
+            } finally {
+                currentTestActive = false;
+                updateStatus("就绪");
+                stopRunTimer();
+            }
+        }
+
+        // ---- Custom solve ----
+        async function runCustomTest() {
+            if (currentTestActive) {
+                addResult("❌ 已有测试在运行，请等待或停止", "error");
+                return;
+            }
+
+            currentTestActive = true;
+            stopRequested = false;
+            updateStatus("运行中", "自定义求解");
+            startRunTimer();
+            clearResults();
+
+            try {
+                const size = Number(document.getElementById("customSize")?.value || 4);
+                const boardText = document.getElementById("customBoard")?.value || "";
+                const board = parseBoardFromText(boardText, size);
+
+                addResult("自定义棋盘:\n" + formatBoard(board, size), "info");
+
+                const opts = readSolveOptionsFromUI();
+                const r = await ActiveSolver.solve(board, size, opts);
+
+                if (!r || r.solvable === false) {
+                    addResult("结果: 不可解", "warning");
+                } else if (r.moves === null) {
+                    addResult("结果: 可解，但在限制内未找到解（超时或 maxMoves）", "warning");
+                    addResult("stats: " + JSON.stringify(r.stats || {}, null, 0), "warning");
+                } else {
+                    addResult(`✅ 找到解: ${r.moves.length} 步`, "success");
+                    addResult("moves: " + JSON.stringify(r.moves), "info");
+                    const ok = await ActiveSolver.verifySolution(board, r.moves, size);
+                    addResult("验证: " + (ok ? "通过" : "失败"), ok ? "success" : "error");
+                }
+
+            } catch (e) {
+                addResult("❌ 自定义测试出错: " + (e && e.message ? e.message : String(e)), "error");
+                console.error(e);
+            } finally {
+                currentTestActive = false;
+                updateStatus("就绪");
+                stopRunTimer();
+                setProgress(100);
+            }
+        }
+
+        async function checkCustomSolvable() {
+            if (currentTestActive) {
+                addResult("❌ 已有测试在运行，请等待或停止", "error");
+                return;
+            }
+
+            currentTestActive = true;
+            stopRequested = false;
+            updateStatus("运行中", "自定义可解性");
+            startRunTimer();
+            clearResults();
+
+            try {
+                const size = Number(document.getElementById("customSize")?.value || 4);
+                const boardText = document.getElementById("customBoard")?.value || "";
+                const board = parseBoardFromText(boardText, size);
+
+                const solvable = await ActiveSolver.isSolvable(board, size);
+                addResult("棋盘:\n" + formatBoard(board, size), "info");
+                addResult("可解性: " + solvable, solvable ? "success" : "warning");
+
+            } catch (e) {
+                addResult("❌ 可解性判断出错: " + (e && e.message ? e.message : String(e)), "error");
+                console.error(e);
+            } finally {
+                currentTestActive = false;
+                updateStatus("就绪");
+                stopRunTimer();
+                setProgress(100);
+            }
+        }
+
+        // ---- Verify ----
+        async function runVerifyTest() {
+            if (currentTestActive) {
+                addResult("❌ 已有测试在运行，请等待或停止", "error");
+                return;
+            }
+
+            currentTestActive = true;
+            stopRequested = false;
+            updateStatus("运行中", "验证测试");
+            startRunTimer();
+            clearResults();
+
+            try {
+                const size = Number(document.getElementById("verifySize")?.value || 4);
+                const boardText = document.getElementById("verifyBoard")?.value || "";
+                const movesText = document.getElementById("verifyMoves")?.value || "[]";
+
+                const board = parseBoardFromText(boardText, size);
+                let moves = [];
+                try {
+                    moves = JSON.parse(movesText);
+                } catch (_) {
+                    throw new Error("moves 必须是 JSON 数组，例如 [\"left\",\"up\"]");
+                }
+
+                const ok = await ActiveSolver.verifySolution(board, moves, size);
+                addResult("棋盘:\n" + formatBoard(board, size), "info");
+                addResult("moves: " + JSON.stringify(moves), "info");
+                addResult("验证结果: " + (ok ? "通过" : "失败"), ok ? "success" : "error");
+
+            } catch (e) {
+                addResult("❌ 验证出错: " + (e && e.message ? e.message : String(e)), "error");
+                console.error(e);
+            } finally {
+                currentTestActive = false;
+                updateStatus("就绪");
+                stopRunTimer();
+                setProgress(100);
+            }
+        }
+
+        // ---- Boot ----
+        document.addEventListener("DOMContentLoaded", async () => {
+            clearResults();
+            updateStatus("初始化中");
+
+            try {
+                await initSolver();
+                updateStatus("就绪");
+            } catch (e) {
+                updateStatus("错误");
+                addResult("❌ 初始化失败: " + (e && e.message ? e.message : String(e)), "error");
+                console.error(e);
+            }
+        });
+    </script>
+</body>
+</html>

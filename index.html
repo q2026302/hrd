@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>数字华容道 · 增强版</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <div class="main-layout">
+            <div class="left-section">
+                <!-- 顶部状态栏：网格配置/步数/计时 -->
+                <div class="game-stats-bar">
+                    <div class="stat-item">
+                        <span>🎲 网格</span>
+                        <select id="gridSizeSelect">
+                            <option value="3">3x3</option>
+                            <option value="4">4x4</option>
+                            <option value="5">5x5</option>
+                        </select>
+                    </div>
+                    <div class="stat-item" id="moveCountDisplay">🚶 0 步</div>
+                    <div class="stat-item" id="timerDisplay">⏱️ 00:00</div>
+                </div>
+
+                <div class="board-wrapper">
+                    <div class="board" id="board"></div>
+                </div>
+            </div>
+
+            <div class="right-section">
+                <div class="control-panel">
+                    <!-- 两个按钮方案：开局（下拉）+ 求解 -->
+                    <div class="button-row">
+                        <div class="dropdown" id="startDropdown">
+                            <button class="dropdown-btn" id="startBtn">
+                                <span>🎲 开局</span>
+                                <span style="font-size: 0.8rem;">▼</span>
+                            </button>
+							<div class="dropdown-content" id="startDropdownContent">
+								<div class="dropdown-item" data-action="reset">重置棋盘</div>
+								<div class="dropdown-item" data-action="random">随机开局</div>
+								<div class="dropdown-item" data-action="easy">简单开局</div>
+								<div class="dropdown-item" data-action="hard">困难开局</div>
+								<div class="dropdown-item" data-action="manual">手动设置</div>
+							</div>
+                        </div>
+
+                        <button id="solveBtn">⚡ 求解</button>
+                    </div>
+                </div>
+
+                <div class="info-panel" id="infoPanel">
+                    <!-- 标签页头 -->
+                    <div class="tab-header">
+                        <button class="tab-btn active" data-tab="record">📋 操作记录</button>
+                        <button class="tab-btn" data-tab="steps">📐 求解步骤</button>
+                    </div>
+                    <!-- 操作记录标签页 -->
+                    <div class="tab-content">
+                        <div class="tab-pane active" id="tabRecord">
+                            <div class="move-record" id="moveRecord">暂无移动记录</div>
+                        </div>
+                        <div class="tab-pane" id="tabSteps">
+                            <div class="steps-container" id="stepsContainer">
+                                <div class="empty-message">点击求解查看步骤</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 手动输入弹窗 -->
+    <div id="inputModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-title">✏️ 手动输入</div>
+            <div class="modal-hint" id="modalHint">
+                <span>空</span> 表示空格，0亦可
+            </div>
+            <div class="modal-error" id="modalError">
+                ⚠️ 输入无效！必须包含1~N各一次，且有一个空格
+            </div>
+            <div class="modal-input-grid" id="modalInputGrid"></div>
+            <div class="modal-buttons">
+                <button class="modal-cancel" id="modalCancelBtn">取消</button>
+                <button class="modal-confirm" id="modalConfirmBtn">应用</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 先加载求解器，再加载主逻辑 -->
+    <script src="solver.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

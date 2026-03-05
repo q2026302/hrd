@@ -1,60 +1,61 @@
-# 15-Puzzle - Game Introduction & Guide
+# Sliding Puzzle – Game Introduction & Guide
 
-## Game Introduction
+## Game Overview
 
-**15-Puzzle** (also known as **Number Sliding Puzzle** or **Gem Puzzle**) is a classic sliding puzzle game. This version features an 3x3 grid with eight numbered tiles and one empty space. The goal is simple yet challenging: slide the tiles using the empty space to arrange the numbers in order from 1 to 8.
-
----
-**Play Demo**: [https://q2026302.github.io/hrd/hrd.html](https://q2026302.github.io/hrd/hrd.html)
+**Sliding Puzzle** (a.k.a. **Number Puzzle** or **Gem Puzzle**) is a classic tile‑sliding game. This version supports multiple grid sizes (default is 3×3). Slide the tiles into the empty space to restore the numbers in order.
 
 ---
+**Play Demo**: [https://q2026302.github.io/hrd/hrd.html](https://q2026302.github.io/hrd/hrd.html)  
+---
 
-## Features
+## Highlights
 
-### 🪵 Wooden Toy Aesthetic
-- Realistic 3D wooden tiles with natural wood grain texture
-- Recessed groove design on the board with exposed wood finish for the empty space
-- Tactile feedback with a subtle pressing effect when clicking tiles
+### 🪵 Wooden Toy Look
+- 3D wooden tiles with subtle grain
+- Recessed board grooves, with the empty slot revealing the wood base
+- A light “press” feel when clicking tiles
 
-### 🖱️ Two Ways to Play
-- **Drag & Drop**: Simply grab a tile and drag it into the adjacent empty space
-- **Click to Move**: Click any tile next to the empty space and it slides right in
+### 🖱️ Two Easy Controls
+- **Drag**: Drag a tile into the adjacent empty slot
+- **Click**: Click a tile next to the empty slot to slide it
 
-### 📊 Smart Helper Tools
-- **Move History**: Track every move in real-time (e.g., 5↑, 3←)
-- **Auto Solver**: Finds the shortest path to victory with one click
-- **Step-by-Step Navigation**: Walk through the solution with Previous/Next buttons, or jump directly by clicking any step
-- **Solvability Check**: Instantly tells you if the current puzzle can be solved
+### 📈 Helpful Tools
+- **Move History**: Logs each move in real time (e.g., 5↑, 3←)
+- **Timer & Move Count**: Timer starts on the first valid move; move count updates continuously
+- **Auto Solver**: Computes a valid solution path
+- **Step Navigator**: Previous/Next buttons + click any step to jump
+- **Solvability Check**: Solver warns if a custom board is unsolvable
 
 ---
 
-## Interface Overview
+## Interface Guide
 
-### Left Side - Game Board
-- **3x3 Grid**: Nine cells—eight with numbered wooden tiles, one empty
-- **Numbered Tiles**: Tiles 1-8 with a dimensional wood look
-- **Empty Space**: Dark recessed groove (not clickable)
+### Left Panel – Board
+- **Resizable Grid**: Choose different sizes (default 3×3)
+- **Numbered Tiles**: Clean, raised wood style
+- **Empty Slot**: Recessed groove, not clickable
 
-### Right Side - Control Panel
-1. **Game Controls**
-   - **Random**: Dropdown with three shuffle modes—"Fully Random", "Easy Start", or "Hard Start"
-   - **Manual**: Popup to enter your own tile arrangement
-   - **Solve**: Calculates and displays the optimal solution
-   - **Reset**: Restores the board to its initial state
+### Right Panel – Controls
+1. **Start Menu (Dropdown)**
+   - **Reset Board**: Return to the current starting layout
+   - **Random Start**: Legal random shuffle (always solvable)
+   - **Easy Start**: Fewer shuffles, easier
+   - **Hard Start**: More shuffles, harder
+   - **Manual Setup**: Input your own layout
 
-2. **Info Panel**
-   - **Move History**: Shows all moves you've made
-   - **Solution Steps**: Displays the optimal solution (appears after clicking Solve)
+2. **Info Tabs**
+   - **Move History**: All moves you’ve made
+   - **Solution Steps**: Appears after clicking Solve
 
 ---
 
 ## How to Play
 
 ### Goal
-Arrange the numbers in order from 1 to 8, with the empty space in the bottom-right corner (cell 9).
+Arrange tiles in ascending order, with the empty slot at the bottom‑right.
 
 ```
-Solved State:
+Solved State (3×3):
 ┌───┬───┬───┐
 │ 1 │ 2 │ 3 │
 ├───┼───┼───┤
@@ -64,76 +65,78 @@ Solved State:
 └───┴───┴───┘
 ```
 
-### Movement Rules
-- Only tiles next to the empty space can move
-- A move slides a tile into the empty spot
-- The empty space itself doesn't "move"—tiles move into it
+### Rules
+- Only tiles adjacent to the empty slot can move
+- Tiles slide into the empty slot
+- The empty slot itself doesn’t move—tiles move into it
 
 ### Solvability
-- Not every random shuffle is solvable (about half are)
-- The game automatically checks and lets you know
-- If unsolvable, the Solve button will show: "Current board is unsolvable"
+- **Random / Easy / Hard** starts are created by legal moves, so they’re always solvable
+- Custom layouts may be unsolvable; the solver will tell you
 
 ---
 
 ## Controls & Features
 
 ### Basic Moves
-- **Drag**: Hold a tile and drag it toward the empty space
-- **Click**: Just click a tile next to the empty space—it slides automatically
+- **Drag** tiles into the empty slot  
+- **Click** adjacent tiles to slide them
 
-### Random Start
-Click the **Random** button and choose:
-- **Fully Random**: Complete shuffle (150 random moves)
-- **Easy Start**: Only swaps tiles 7 and 8
-- **Hard Start**: A preset tricky layout
+### Start Options
+Open the **Start** dropdown:
+- **Reset Board**: Back to the current starting layout
+- **Random Start**: Solvable random shuffle
+- **Easy Start**: Light shuffle
+- **Hard Start**: Deep shuffle
+- **Manual Setup**: Enter a custom layout
 
 ### Manual Setup
-1. Click **Manual** to open the setup window
-2. Enter numbers 1-8 in the cells (leave blank or enter 0 for the empty space)
-3. Click **Apply** to load your custom board
+1. Click **Manual Setup**
+2. Fill in the numbers (leave the empty slot blank)
+3. Click **Apply**
 
 ### Auto Solver
-1. Hit **Solve** to find the optimal solution
-2. Steps appear as "number + arrow" (e.g., 5↑ means tile 5 slides up)
-3. Use **Previous/Next** to walk through the solution
-4. Click any step to jump straight to that point in the solution
+1. Click **Solve**
+2. Steps are shown as “number + arrow” (e.g., 5↑)
+3. Use **Previous/Next** to step through
+4. Click any step to jump instantly
+5. If you make a move that doesn’t follow the solution, the solution is cleared
 
 ### Move History
-- Shows every move at the top of the right panel
+- Every move is listed
 - Latest move is highlighted
-- Format: tile number + direction arrow
+- Format: tile number + arrow
 
 ---
 
-## Pro Tips
+## Tips
 
-1. **Watch the empty space**—it's your only way to move tiles
-2. **Start with the corners**: Lock in numbers 1, 3, 7, and 8 first, then work on the middle
-3. **Learn from the solver**: If you're stuck, let the computer show you the optimal path
-4. **Explore freely**: Try your own moves—if you deviate from the solution, it clears automatically
+1. Keep your eye on the empty slot—it’s your only way to move tiles  
+2. Lock in corners first, then work inward  
+3. Use the solver to learn efficient patterns  
+4. Deviating from the solution clears the current solve path
 
 ---
 
 ## FAQ
 
-**Q: Why are some random puzzles unsolvable?**
-A: Sliding puzzles have mathematical parity constraints—only half of all random arrangements are solvable. The game checks this automatically and warns you.
+**Q: Will random starts ever be unsolvable?**  
+A: No. Random/Easy/Hard starts are generated by legal moves, so they’re always solvable.
 
-**Q: What do the arrows in the solution mean?**
-A: Each arrow shows which direction a numbered tile slides. "5↑" means tile 5 moves up one space.
+**Q: What do the arrows mean?**  
+A: They show the tile’s move direction (e.g., “5↑” means tile 5 moved up).
 
-**Q: How do I get back to where I started?**
-A: Click **Reset** to return to the initial board state (the layout after your last random start or manual setup).
+**Q: How do I reset the board?**  
+A: Use **Reset Board** to return to the current start layout.
 
-**Q: How do I enter an empty space in manual mode?**
-A: Just leave the cell blank, or enter 0.
+**Q: How do I mark the empty slot in Manual Setup?**  
+A: Just leave the cell blank.
 
 ---
 
 ## About
 
-- **Game**: 15-Puzzle / Number Sliding Puzzle
-- **Version**: 1.0
-- **Style**: Wooden Toy Texture
-- **Brain**: A* Search Algorithm + Manhattan Distance Heuristic
+- **Game**: Sliding Puzzle (15‑Puzzle style)  
+- **Version**: 1.0  
+- **Style**: Wooden Toy Aesthetic  
+- **Solver**: A* search with Manhattan‑distance heuristic
