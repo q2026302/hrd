@@ -140,3 +140,4 @@ A: Just leave the cell blank.
 - **Version**: 1.0  
 - **Style**: Wooden Toy Aesthetic  
 - **Solver**: A* search with Manhattan‑distance heuristic
+- **Performance Optimization**: Solver runs in a Web Worker (with automatic fallback)
