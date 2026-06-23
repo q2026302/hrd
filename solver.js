@@ -1,8 +1,9 @@
 const PuzzleSolver = (function () {
   const DIRECTIONS = { UP: "up", DOWN: "down", LEFT: "left", RIGHT: "right" };
   const DIRECTION_ARROWS = { up: "↑", down: "↓", left: "←", right: "→" };
-  const SPACE_TO_NUMBER = { up: "down", down: "up", left: "right", right: "left" };
+  // 合并：空格移动方向 ↔ 数字移动方向（互为反向）
   const OPPOSITE = { up: "down", down: "up", left: "right", right: "left" };
+  const SPACE_TO_NUMBER = OPPOSITE; // 别名，语义不同但值相同
 
   const DEFAULT_LIMITS = { timeLimitMs: 3000, maxMoves: 100 };
 
@@ -151,7 +152,31 @@ const PuzzleSolver = (function () {
     board[emptyIdxBefore] = emptyValue;
   }
 
-  // 3x3 用 A*（最优且通常很快），这里保留简单实现（用字符串key）
+  // Zobrist 哈希：预计算随机数表，board key 用数字而非字符串
+  const _zobristTable = new Map(); // size -> table
+  function getZobristTable(size) {
+    if (_zobristTable.has(size)) return _zobristTable.get(size);
+    const n = size * size;
+    const table = new Array(n * (n + 1));
+    // 用确定性伪随机（seed=42），保证不同调用结果一致
+    let seed = 42;
+    for (let i = 0; i < table.length; i++) {
+      seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+      table[i] = seed;
+    }
+    _zobristTable.set(size, table);
+    return table;
+  }
+  function boardHash(board, size) {
+    const table = getZobristTable(size);
+    let h = 0;
+    for (let i = 0; i < board.length; i++) {
+      h ^= table[i * (size * size + 1) + board[i]];
+    }
+    return h;
+  }
+
+  // 3x3 用 A*（最优且通常很快）
   class MinHeap {
     constructor() { this.a = []; }
     push(x) {
@@ -193,26 +218,31 @@ const PuzzleSolver = (function () {
     const goal = [];
     for (let i = 1; i < emptyValue; i++) goal.push(i);
     goal.push(emptyValue);
-    const goalKey = goal.join(",");
+    const goalKey = boardHash(goal, size);
 
-    const startKey = startBoard.join(",");
-    if (startKey === goalKey) return { moves: [], stats: { nodesExpanded: 0 } };
+    const startKey = boardHash(startBoard, size);
+    if (startKey === goalKey && boardsEqual(startBoard, goal)) return { moves: [], stats: { nodesExpanded: 0 } };
 
     const heap = new MinHeap();
-    const gScore = new Map();
-    const parent = new Map();
+    const gScore = new Map();  // hash -> g值（碰撞时用字符串 fallback）
+    const parent = new Map();  // hash -> { prevKey, prevBoard, move }
+    const keyCollision = new Map(); // hash -> board.join(",") 用于碰撞检测
 
     const t0 = performance.now ? performance.now() : Date.now();
     let nodesExpanded = 0;
 
     heap.push({
       key: startKey,
+      keyStr: startBoard.join(","),
       board: startBoard.slice(),
       emptyIdx: startBoard.indexOf(emptyValue),
       g: 0,
       f: heuristic(startBoard, size, goalRow, goalCol),
     });
     gScore.set(startKey, 0);
+    keyCollision.set(startKey, startBoard.join(","));
+
+    const goalStr = goal.join(",");
 
     while (heap.size) {
       const now = performance.now ? performance.now() : Date.now();
@@ -228,14 +258,16 @@ const PuzzleSolver = (function () {
         return { moves: null, stats: { nodesExpanded, maxMovesReached: true } };
       }
 
-      if (cur.key === goalKey) {
+      if (cur.key === goalKey && cur.keyStr === goalStr) {
         const moves = [];
-        let k = goalKey;
-        while (k !== startKey) {
+        let k = cur.key;
+        let kStr = cur.keyStr;
+        while (kStr !== startBoard.join(",")) {
           const p = parent.get(k);
           if (!p) break;
           moves.push(p.move);
           k = p.prevKey;
+          kStr = p.prevKeyStr;
         }
         moves.reverse();
         return { moves, stats: { nodesExpanded } };
@@ -247,17 +279,23 @@ const PuzzleSolver = (function () {
         const res = applyMoveInPlace(nb, cur.emptyIdx, mv, size);
         if (!res) continue;
 
-        const nk = nb.join(",");
+        const nk = boardHash(nb, size);
+        const nkStr = nb.join(",");
         const ng = cur.g + 1;
+
+        // 碰撞检测：同 hash 但不同 board 时用字符串 fallback
+        const existingStr = keyCollision.get(nk);
+        if (existingStr !== undefined && existingStr !== nkStr) continue; // hash 碰撞，跳过
 
         const best = gScore.get(nk);
         if (best !== undefined && ng >= best) continue;
 
         gScore.set(nk, ng);
-        parent.set(nk, { prevKey: cur.key, move: mv });
+        keyCollision.set(nk, nkStr);
+        parent.set(nk, { prevKey: cur.key, prevKeyStr: cur.keyStr, move: mv });
 
         const nf = ng + heuristic(nb, size, goalRow, goalCol);
-        heap.push({ key: nk, board: nb, emptyIdx: res.newEmptyIdx, g: ng, f: nf });
+        heap.push({ key: nk, keyStr: nkStr, board: nb, emptyIdx: res.newEmptyIdx, g: ng, f: nf });
       }
     }
 

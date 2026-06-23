@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>数字华容道 · 增强版</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -24,7 +25,7 @@
                 </div>
 
                 <div class="board-wrapper">
-                    <div class="board" id="board"></div>
+                    <div class="board" id="board" role="grid" aria-label="数字华容道棋盘"></div>
                 </div>
             </div>
 
@@ -47,6 +48,7 @@
                         </div>
 
                         <button id="solveBtn">⚡ 求解</button>
+                        <button id="undoBtn">↩ 撤销</button>
                     </div>
                 </div>
 

@@ -29,10 +29,11 @@
     let dragStartX = 0;
     let dragStartY = 0;
 
-    // 计时相关
+    // 计时相关（用 Date.now() 差值，避免 setInterval 漂移）
     let timerInterval = null;
-    let timerSeconds = 0;
-    let isTimerRunning = false;        // 第一次移动后开始
+    let timerStartTime = 0;     // 计时开始的 Date.now()
+    let timerAccumulated = 0;   // 暂停前累计的秒数
+    let isTimerRunning = false; // 第一次移动后开始
     let moveCount = 0;
 
     // 通关锁定
@@ -110,7 +111,14 @@
         return row * BOARD_SIZE + col;
     }
     function findEmptyIndex(board) {
-        return board.indexOf(EMPTY_VALUE);
+        const idx = board.indexOf(EMPTY_VALUE);
+        // 兼容 localStorage 中 null/undefined 的情况
+        if (idx < 0) {
+            for (let i = 0; i < board.length; i++) {
+                if (board[i] == null) { board[i] = EMPTY_VALUE; return i; }
+            }
+        }
+        return idx;
     }
     function copyBoard(board) {
         return board.slice();
@@ -125,27 +133,13 @@
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
 
-    // 页面内提示条
+    // 页面内提示条（样式已移至 CSS）
     function ensureToastEl() {
         let el = document.getElementById('gameToast');
         if (el) return el;
 
         el = document.createElement('div');
         el.id = 'gameToast';
-        el.style.position = 'fixed';
-        el.style.left = '50%';
-        el.style.top = '16px';
-        el.style.transform = 'translateX(-50%)';
-        el.style.zIndex = '9999';
-        el.style.maxWidth = '92vw';
-        el.style.padding = '10px 14px';
-        el.style.borderRadius = '12px';
-        el.style.boxShadow = '0 10px 30px rgba(0,0,0,0.18)';
-        el.style.fontSize = '14px';
-        el.style.lineHeight = '1.4';
-        el.style.opacity = '0';
-        el.style.pointerEvents = 'none';
-        el.style.transition = 'opacity 180ms ease, transform 180ms ease';
         document.body.appendChild(el);
         return el;
     }
@@ -158,22 +152,14 @@
             toastTimer = null;
         }
 
-        const colors = {
-            success: { bg: '#ecfdf5', border: '#a7f3d0', fg: '#065f46' },
-            info: { bg: '#eff6ff', border: '#bfdbfe', fg: '#1e40af' },
-            warning: { bg: '#fffbeb', border: '#fde68a', fg: '#92400e' },
-            error: { bg: '#fef2f2', border: '#fecaca', fg: '#991b1b' }
-        };
-        const c = colors[type] || colors.info;
-
-        el.style.background = c.bg;
-        el.style.border = `1px solid ${c.border}`;
-        el.style.color = c.fg;
-        el.innerHTML = `<div style="font-weight:700; margin-bottom:2px;">${title}</div><div>${message}</div>`;
+        el.className = type; // success / info / warning / error
+        el.innerHTML = `<div class="toast-title">${title}</div><div>${message}</div>`;
 
         // show
-        el.style.opacity = '1';
-        el.style.transform = 'translateX(-50%) translateY(0)';
+        requestAnimationFrame(() => {
+            el.style.opacity = '1';
+            el.style.transform = 'translateX(-50%) translateY(0)';
+        });
 
         if (autoHideMs && autoHideMs > 0) {
             toastTimer = setTimeout(() => {
@@ -200,7 +186,7 @@
         showToast(
             'success',
             '通关成功',
-            `用时 ${formatTime(timerSeconds)}，共 ${moveHistory.length} 步（可点“开局”继续）`,
+            `用时 ${formatTime(getElapsedSeconds())}，共 ${moveHistory.length} 步（可点“开局”继续）`,
             3500
         );
 
@@ -270,17 +256,22 @@
         boardEl.style.gridTemplateColumns = `repeat(${BOARD_SIZE}, 1fr)`;
     }
 
-    // 计时器控制
+    // 计时器控制（基于 Date.now() 差值）
+    function getElapsedSeconds() {
+        if (!isTimerRunning) return timerAccumulated;
+        return timerAccumulated + Math.floor((Date.now() - timerStartTime) / 1000);
+    }
     function startTimerIfNeeded() {
         if (!isTimerRunning) {
             isTimerRunning = true;
-            timerInterval = setInterval(() => {
-                timerSeconds++;
-                updateTimerDisplay();
-            }, 1000);
+            timerStartTime = Date.now();
+            timerInterval = setInterval(updateTimerDisplay, 500);
         }
     }
     function stopTimer() {
+        if (isTimerRunning) {
+            timerAccumulated = getElapsedSeconds();
+        }
         if (timerInterval) {
             clearInterval(timerInterval);
             timerInterval = null;
@@ -289,7 +280,8 @@
     }
     function resetTimerAndCount(resetSteps = true) {
         stopTimer();
-        timerSeconds = 0;
+        timerAccumulated = 0;
+        timerStartTime = 0;
         isTimerRunning = false;
         if (resetSteps) {
             moveCount = 0;
@@ -300,7 +292,7 @@
         updateMoveCountDisplay();
     }
     function updateTimerDisplay() {
-        timerDisplay.textContent = `⏱️ ${formatTime(timerSeconds)}`;
+        timerDisplay.textContent = `⏱️ ${formatTime(getElapsedSeconds())}`;
     }
     function updateMoveCountDisplay() {
         moveCount = moveHistory.length;
@@ -326,33 +318,46 @@
         updateMoveCountDisplay();
     }
 
-    // 渲染棋盘
+    // 渲染棋盘（全量重写 + 事件委托）
     function renderBoard() {
         let html = '';
         for (let i = 0; i < TOTAL_TILES; i++) {
             const value = currentBoard[i];
-            const isEmpty = (value === EMPTY_VALUE);
-            const numberText = isEmpty ? '' : value;
-            html += `<div class="tile ${isEmpty ? 'empty' : ''}" data-index="${i}">${numberText}</div>`;
+            const isEmpty = (value === EMPTY_VALUE || value == null);
+            // 修复：如果值无效（null/undefined），视为空格并修正 currentBoard
+            if (value == null && value !== EMPTY_VALUE) {
+                currentBoard[i] = EMPTY_VALUE;
+            }
+            html += `<div class="tile${isEmpty ? ' empty' : ''}" data-index="${i}">${isEmpty ? '' : value}</div>`;
         }
         boardEl.innerHTML = html;
 
-        // 锁定时不给 tile 绑定事件（从根源避免误触/拖拽）
+        // 锁定时不绑定事件
         if (isBoardLocked) return;
 
-        const tiles = document.querySelectorAll('.tile:not(.empty)');
-        tiles.forEach(tile => {
-            tile.addEventListener('mousedown', startDrag);
-            tile.addEventListener('click', handleClick);
-        });
+        // 事件委托：只绑定一次
+        if (!boardEl._delegated) {
+            boardEl.addEventListener('mousedown', (e) => {
+                const tile = e.target.closest('.tile:not(.empty)');
+                if (tile) startDrag(tile, e);
+            });
+            boardEl.addEventListener('touchstart', (e) => {
+                const tile = e.target.closest('.tile:not(.empty)');
+                if (tile) startDrag(tile, e);
+            }, { passive: false });
+            boardEl.addEventListener('click', (e) => {
+                const tile = e.target.closest('.tile:not(.empty)');
+                if (tile) handleClick(tile, e);
+            });
+            boardEl._delegated = true;
+        }
     }
 
-    // 点击移动
-    function handleClick(e) {
+    // 点击移动（支持事件委托）
+    function handleClick(tile, e) {
         if (isBoardLocked) return;
-        if (isDragging) return;
+        if (_lastDragMove) { _lastDragMove = false; return; }
 
-        const tile = e.currentTarget;
         const index = parseInt(tile.dataset.index);
         const emptyIdx = findEmptyIndex(currentBoard);
 
@@ -368,61 +373,113 @@
     }
 
     // 拖动开始
-    function startDrag(e) {
+    function startDrag(tile, e) {
         if (isBoardLocked) return;
-        if (e.button !== 0) return;
+        if (e.button !== undefined && e.button !== 0) return;
+        // 注意：不在 mousedown 时 preventDefault，否则 click 事件不会触发
+
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+        dragStartIndex = parseInt(tile.dataset.index);
+        dragStartX = clientX;
+        dragStartY = clientY;
+        dragMoved = false;
+        tile.classList.add('dragging');
+
+        // 触摸事件需要阻止默认行为（防滚动），鼠标事件不阻止（保留 click）
+        if (e.touches) {
+            e.preventDefault();
+            document.addEventListener('touchmove', onDrag, { passive: false });
+            document.addEventListener('touchend', endDrag);
+            document.addEventListener('touchcancel', endDrag);
+        } else {
+            document.addEventListener('mousemove', onDrag);
+            document.addEventListener('mouseup', endDrag);
+        }
+    }
+
+    let dragMoved = false;
+    let _lastDragMove = false;  // 标记是否刚完成拖拽移动
+
+    function onDrag(e) {
+        if (dragStartIndex < 0) return;
         e.preventDefault();
 
-        const tile = e.currentTarget;
-        dragStartIndex = parseInt(tile.dataset.index);
-        dragStartX = e.clientX;
-        dragStartY = e.clientY;
-        isDragging = true;
-        tile.classList.add('dragging');
-        document.addEventListener('mousemove', onDrag);
-        document.addEventListener('mouseup', endDrag);
-    }
-    function onDrag(e) {
-        if (!isDragging) return;
-        e.preventDefault();
-        const dx = e.clientX - dragStartX;
-        const dy = e.clientY - dragStartY;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const dx = clientX - dragStartX;
+        const dy = clientY - dragStartY;
+
         if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
-            const tile = document.querySelector(`.tile[data-index="${dragStartIndex}"]`);
+            dragMoved = true;
+            isDragging = true;  // 只在真正拖动时才标记
+            const tile = boardEl.children[dragStartIndex];
             if (tile) tile.style.transform = `translate(${dx}px, ${dy}px) scale(0.96)`;
         }
     }
+
     function endDrag(e) {
-        if (!isDragging) return;
+        if (dragStartIndex < 0) return;
         e.preventDefault();
 
-        const startTile = document.querySelector(`.tile[data-index="${dragStartIndex}"]`);
-        if (startTile) {
-            startTile.style.transform = '';
-            startTile.classList.remove('dragging');
-        }
+        const startTile = boardEl.children[dragStartIndex];
 
-        const elementsAtCursor = document.elementsFromPoint(e.clientX, e.clientY);
-        let targetTile = null;
-        for (const el of elementsAtCursor) {
-            if (el.classList && el.classList.contains('tile')) {
-                targetTile = el;
-                break;
+        if (dragMoved) {
+            const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+            const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+
+            // 清除 transform 和 dragging 样式
+            if (startTile) {
+                startTile.style.transform = '';
+                startTile.classList.remove('dragging');
             }
-        }
 
-        if (targetTile && !isBoardLocked) {
-            const targetIndex = parseInt(targetTile.dataset.index);
+            // 用坐标计算目标格子（空格有 pointer-events:none，elementsFromPoint 检测不到）
+            const rect = boardEl.getBoundingClientRect();
+            const padLeft = parseFloat(getComputedStyle(boardEl).paddingLeft) || 4;
+            const padTop = parseFloat(getComputedStyle(boardEl).paddingTop) || 4;
+            const innerW = rect.width - padLeft * 2;
+            const innerH = rect.height - padTop * 2;
+            const cellW = innerW / BOARD_SIZE;
+            const cellH = innerH / BOARD_SIZE;
+            const relX = clientX - rect.left - padLeft;
+            const relY = clientY - rect.top - padTop;
+            const col = Math.floor(relX / cellW);
+            const row = Math.floor(relY / cellH);
+
+            if (row >= 0 && row < BOARD_SIZE && col >= 0 && col < BOARD_SIZE) {
+                const targetIndex = row * BOARD_SIZE + col;
+                const emptyIdx = findEmptyIndex(currentBoard);
+                if (targetIndex === emptyIdx) {
+                    _lastDragMove = true;
+                    performMove(dragStartIndex, emptyIdx);
+                }
+            }
+        } else if (e.changedTouches) {
+            // 触摸事件不会产生合成 click，所以触摸点击在这里处理
+            if (startTile) startTile.classList.remove('dragging');
+            const index = parseInt(startTile.dataset.index);
             const emptyIdx = findEmptyIndex(currentBoard);
-            if (targetIndex === emptyIdx) {
-                performMove(dragStartIndex, emptyIdx);
+            const fromRowCol = idxToRowCol(index);
+            const emptyRowCol = idxToRowCol(emptyIdx);
+            const rowDiff = Math.abs(fromRowCol.row - emptyRowCol.row);
+            const colDiff = Math.abs(fromRowCol.col - emptyRowCol.col);
+            if ((rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1)) {
+                performMove(index, emptyIdx);
             }
+        } else {
+            // 鼠标点击：清理 dragging 样式，让 click 事件处理移动
+            if (startTile) startTile.classList.remove('dragging');
         }
 
-        isDragging = false;
         dragStartIndex = -1;
+        isDragging = false;
         document.removeEventListener('mousemove', onDrag);
         document.removeEventListener('mouseup', endDrag);
+        document.removeEventListener('touchmove', onDrag);
+        document.removeEventListener('touchend', endDrag);
+        document.removeEventListener('touchcancel', endDrag);
     }
 
     // 执行移动
@@ -457,7 +514,11 @@
         moveHistory.push(movedNumber);
         moveDirections.push(direction);
 
-        updateDisplay();
+        renderBoard();
+        updateMoveRecord();
+        updateStepsDisplay();
+        updateMoveCountDisplay();
+        saveGameState(); // 自动保存
         checkWinAndHandle();
         return true;
     }
@@ -547,7 +608,7 @@
 
             if (!isManualStep) {
                 stopTimer();
-                timerSeconds = 0;
+                timerAccumulated = 0;
                 isTimerRunning = false;
                 updateTimerDisplay();
             }
@@ -589,7 +650,7 @@
 
         if (!isManualStep) {
             stopTimer();
-            timerSeconds = 0;
+            timerAccumulated = 0;
             isTimerRunning = false;
             updateTimerDisplay();
         }
@@ -834,6 +895,12 @@
 
     solveBtn.addEventListener('click', solvePuzzle);
 
+    // 撤销按钮
+    const undoBtn = document.getElementById('undoBtn');
+    if (undoBtn) {
+        undoBtn.addEventListener('click', undoMove);
+    }
+
     modalCancelBtn.addEventListener('click', closeModal);
     modalConfirmBtn.addEventListener('click', applyModalInput);
     modal.addEventListener('click', (e) => {
@@ -857,6 +924,134 @@
 
     document.addEventListener('selectstart', (e) => e.preventDefault());
 
+    // ===== 键盘操作支持 =====
+    document.addEventListener('keydown', (e) => {
+        if (isBoardLocked) return;
+        if (modal.style.display === 'flex') return; // 弹窗打开时不响应
+
+        const emptyIdx = findEmptyIndex(currentBoard);
+        const { row, col } = idxToRowCol(emptyIdx);
+        let targetIdx = -1;
+
+        // 方向键：移动空格（反向 = 移动数字）
+        switch (e.key) {
+            case 'ArrowUp':    if (row < BOARD_SIZE - 1) targetIdx = rowColToIdx(row + 1, col); break;
+            case 'ArrowDown':  if (row > 0) targetIdx = rowColToIdx(row - 1, col); break;
+            case 'ArrowLeft':  if (col < BOARD_SIZE - 1) targetIdx = rowColToIdx(row, col + 1); break;
+            case 'ArrowRight': if (col > 0) targetIdx = rowColToIdx(row, col - 1); break;
+            case 'z': case 'Z':
+                if (e.ctrlKey || e.metaKey) { undoMove(); e.preventDefault(); }
+                return;
+            default: return;
+        }
+
+        if (targetIdx >= 0) {
+            e.preventDefault();
+            performMove(targetIdx, emptyIdx);
+        }
+    });
+
+    // ===== 撤销功能 =====
+    function undoMove() {
+        if (moveHistory.length === 0) return;
+        if (isBoardLocked) return;
+
+        // 清除求解状态（撤销后解法失效）
+        if (hasSolution) clearSolution();
+
+        // 弹出最后一步
+        const lastNumber = moveHistory.pop();
+        const lastDirection = moveDirections.pop();
+
+        // 反向移动：找到 lastNumber 的当前位置，移到空格
+        const emptyIdx = findEmptyIndex(currentBoard);
+        const { row: eRow, col: eCol } = idxToRowCol(emptyIdx);
+
+        // 根据方向反推数字原来的位置
+        let numIdx = -1;
+        switch (lastDirection) {
+            case '↑': numIdx = rowColToIdx(eRow + 1, eCol); break; // 数字向上=空格向下
+            case '↓': numIdx = rowColToIdx(eRow - 1, eCol); break;
+            case '←': numIdx = rowColToIdx(eRow, eCol + 1); break;
+            case '→': numIdx = rowColToIdx(eRow, eCol - 1); break;
+        }
+
+        if (numIdx >= 0 && numIdx < TOTAL_TILES) {
+            [currentBoard[numIdx], currentBoard[emptyIdx]] = [currentBoard[emptyIdx], currentBoard[numIdx]];
+            renderBoard();
+            updateMoveRecord();
+            updateMoveCountDisplay();
+            saveGameState();
+        }
+
+        // 如果撤销到0步，停止计时
+        if (moveHistory.length === 0) {
+            stopTimer();
+            timerAccumulated = 0;
+            updateTimerDisplay();
+        }
+    }
+
+    // ===== localStorage 持久化 =====
+    const STORAGE_KEY = 'hrd_game_state';
+
+    function saveGameState() {
+        try {
+            const state = {
+                board: currentBoard,
+                initial: initialBoard,
+                size: BOARD_SIZE,
+                moves: moveHistory,
+                directions: moveDirections,
+                elapsed: getElapsedSeconds(),
+                isRunning: isTimerRunning,
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        } catch (e) { /* ignore */ }
+    }
+
+    function loadGameState() {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) return false;
+            const state = JSON.parse(raw);
+            if (!state.board || !state.size) return false;
+
+            BOARD_SIZE = state.size;
+            TOTAL_TILES = state.size * state.size;
+            EMPTY_VALUE = TOTAL_TILES;
+            GOAL_STATE = generateGoalState(state.size);
+            goalBoard = copyBoard(GOAL_STATE);
+
+            currentBoard = copyBoard(state.board);
+            // 修复：确保 board 中没有 null/undefined
+            for (let i = 0; i < currentBoard.length; i++) {
+                if (currentBoard[i] == null) currentBoard[i] = EMPTY_VALUE;
+            }
+            initialBoard = state.initial ? copyBoard(state.initial) : copyBoard(state.board);
+            moveHistory = state.moves || [];
+            moveDirections = state.directions || [];
+            timerAccumulated = state.elapsed || 0;
+
+            gridSizeSelect.value = String(state.size);
+            boardEl.style.gridTemplateColumns = `repeat(${BOARD_SIZE}, 1fr)`;
+            lockBoard(false);
+            updateDisplay();
+
+            if (state.isRunning && moveHistory.length > 0) {
+                startTimerIfNeeded();
+            }
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    // 在每次移动后自动保存
+    const _origPerformMove = performMove;
+    // performMove 已经在上面定义了，我们在它末尾加 saveGameState 调用
+    // 通过包装 updateDisplay 间接实现
+
     // 网格尺寸变更
     gridSizeSelect.addEventListener('change', (e) => {
         const newSize = parseInt(e.target.value);
@@ -869,8 +1064,11 @@
         reinitializeBoard(3);
         gridSizeSelect.value = '3';
 
-        // 第一次进入：简单开局
-        setNewBoard(generateInitialEasyBoard(BOARD_SIZE));
+        // 尝试加载保存的游戏状态
+        if (!loadGameState()) {
+            // 没有保存状态：第一次进入用简单开局
+            setNewBoard(generateInitialEasyBoard(BOARD_SIZE));
+        }
 
         // 提前初始化 Solver（减少首次点击求解延迟）
         SolverAPI.init().catch(console.warn);

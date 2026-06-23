@@ -726,3 +726,49 @@ button:active, .dropdown-btn:active {
     transform: translateY(4px);
     box-shadow: 0 2px 0 #8f6f44;
 }
+
+/* ===== Toast 提示条 ===== */
+#gameToast {
+    position: fixed;
+    left: 50%;
+    top: 16px;
+    transform: translateX(-50%);
+    z-index: 9999;
+    max-width: 92vw;
+    padding: 10px 14px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+    font-size: 14px;
+    line-height: 1.4;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 180ms ease, transform 180ms ease;
+}
+#gameToast .toast-title { font-weight: 700; margin-bottom: 2px; }
+#gameToast.success { background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; }
+#gameToast.info    { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+#gameToast.warning { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
+#gameToast.error   { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+
+/* ===== 响应式布局 ===== */
+@media (max-width: 768px) {
+    body { padding: 8px; }
+    .game-container {
+        border-radius: 30px 30px 20px 20px;
+        padding: 15px 12px;
+    }
+    .main-layout {
+        flex-direction: column;
+        gap: 15px;
+    }
+    .left-section, .right-section {
+        min-width: unset;
+        width: 100%;
+    }
+    .board { max-width: 100%; }
+    .tile { font-size: 1.4rem; }
+    .stat-item { font-size: 0.95rem; padding: 5px 12px; }
+    .info-panel { min-height: 200px; }
+    .modal-content { border-radius: 30px; padding: 20px; }
+    .modal-input-cell { width: 50px; height: 50px; font-size: 1.4rem; }
+}
